@@ -2,21 +2,23 @@ import numpy as np
 from scipy.optimize import minimize
 
 # Define the desired color in RGB format
-desired_color = np.array([200, 100, 50])
+desired_color = np.array([217, 0, 217])
 
 # Define the available paint colors and their corresponding RGB values
 paint_colors = {
     'red': np.array([255, 0, 0]),
     'green': np.array([0, 255, 0]),
     'blue': np.array([0, 0, 255]),
-    'yellow': np.array([255, 255, 0]),
-    'purple': np.array([128, 0, 128]),
-    'orange': np.array([255, 165, 0])
+    # 'yellow': np.array([255, 255, 0]),
+    # 'purple': np.array([128, 0, 128]),
+    # 'orange': np.array([255, 165, 0]),
+    'white': np.array([255, 255, 255]),
+    'black': np.array([0, 0, 0]),
 }
 
 # Define the cost function to be minimized
 def cost_function(x, desired_color, paint_colors):
-    mixed_color = np.dot(x, paint_colors.values())
+    mixed_color = np.dot(x, np.array(list(paint_colors.values())))
     return np.linalg.norm(desired_color - mixed_color)
 
 # Define the constraints for the optimization problem
@@ -36,5 +38,5 @@ for color, proportion in zip(paint_colors.keys(), result.x):
     print(f'{color.capitalize()}: {proportion * 100:.2f}%')
 
 # Print the final mixed color
-final_color = np.dot(result.x, paint_colors.values())
+final_color = np.dot(result.x, np.array(list(paint_colors.values())))
 print('Final mixed color:', final_color)
