@@ -1,7 +1,24 @@
+import cv2
 import numpy as np
 from scipy.optimize import minimize
 import tkinter as tk
 from tkinter import colorchooser
+
+# Function to capture the current frame from the webcam and return the average color
+
+
+def get_webcam_color():
+    cap = cv2.VideoCapture(0)
+
+    if not cap.isOpened():
+        return None
+
+    _, frame = cap.read()
+    cap.release()
+    avg_color = frame.mean(axis=0).mean(axis=0)
+
+    return avg_color
+
 
 # Define the available paint colors and their corresponding RGB values
 paint_colors = {
@@ -13,6 +30,7 @@ paint_colors = {
     'black': np.array([0, 0, 0]),
 }
 
+
 def hex_to_triplet(hex_color):
     return tuple(int(hex_color[i:i+2], 16) for i in (1, 3, 5))
 
@@ -21,6 +39,7 @@ def triplet_to_hex(rgb_color):
     return f'#{rgb_color[0]:02x}{rgb_color[1]:02x}{rgb_color[2]:02x}'
 
 # Define the cost function to be minimized
+
 
 def cost_function(x, desired_color, selected_paint_colors):
     mixed_color = np.dot(x, np.array(list(selected_paint_colors.values())))
@@ -38,11 +57,13 @@ constraints = (
     {'type': 'ineq', 'fun': lambda x: x},
 )
 
+
 def optimize_color_mix():
     global desired_color_label
     global paint_colors_listbox
     global result_label
     global final_color_label
+    global webcam_analysis_button
 
     desired_color = desired_color_label.cget('bg')
     desired_color = np.array(hex_to_triplet(desired_color))
@@ -74,6 +95,16 @@ def optimize_color_mix():
     final_color_label['text'] = f'Final mixed color: {final_color}'
 
 
+def analyze_webcam_color():
+    global desired_color_label
+
+    avg_color = get_webcam_color()
+
+    if avg_color is not None:
+        desired_color_label['bg'] = triplet_to_hex(
+            tuple(avg_color.astype(int)))
+
+
 def choose_desired_color():
     color = colorchooser.askcolor()[1]
     if color:
@@ -82,6 +113,9 @@ def choose_desired_color():
 
 root = tk.Tk()
 root.title("Color Mixer")
+
+webcam_analysis_button = tk.Button(root, text="Analyze color with webcam", command=analyze_webcam_color)
+webcam_analysis_button.grid(row=4, column=0, columnspan=3, pady=10)
 
 # Desired color
 tk.Label(root, text="Desired color:").grid(row=0, column=0, sticky='w')
