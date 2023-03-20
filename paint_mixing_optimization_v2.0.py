@@ -1,11 +1,24 @@
+import cv2
 import numpy as np
 from scipy.optimize import minimize
 import tkinter as tk
 from tkinter import colorchooser
 
-# ... (your existing code, e.g. desired_color, paint_colors, cost_function, etc.)
-# Define the desired color in RGB format
-# desired_color = np.array([200, 100, 50])
+# Function to capture the current frame from the webcam and return the average color
+
+
+def get_webcam_color():
+    cap = cv2.VideoCapture(0)
+
+    if not cap.isOpened():
+        return None
+
+    _, frame = cap.read()
+    cap.release()
+    avg_color = frame.mean(axis=0).mean(axis=0)
+
+    return avg_color
+
 
 # Define the available paint colors and their corresponding RGB values
 paint_colors = {
@@ -32,6 +45,7 @@ def cost_function(x, desired_color, selected_paint_colors):
     mixed_color = np.dot(x, np.array(list(selected_paint_colors.values())))
     return np.linalg.norm(desired_color - mixed_color)
 
+
 # Define a small positive value
 EPSILON = 1e-5
 
@@ -44,12 +58,12 @@ constraints = (
 )
 
 
-
 def optimize_color_mix():
     global desired_color_label
     global paint_colors_listbox
     global result_label
     global final_color_label
+    global webcam_analysis_button
 
     desired_color = desired_color_label.cget('bg')
     desired_color = np.array(hex_to_triplet(desired_color))
@@ -62,11 +76,12 @@ def optimize_color_mix():
     selected_paint_colors = {color: value for i, (color, value) in enumerate(
         paint_colors.items()) if i in paint_colors_selected_indices}
 
-    initial_guess = np.ones(len(selected_paint_colors)) / len(selected_paint_colors)
+    initial_guess = np.ones(len(selected_paint_colors)) / \
+        len(selected_paint_colors)
     bounds = [(0, 1)] * len(selected_paint_colors)
 
     result = minimize(cost_function, initial_guess, args=(desired_color, selected_paint_colors),
-                      constraints=constraints, bounds=bounds)
+                      constraints=constraints, bounds=bounds, options={'maxiter': 10000, 'disp': True})
 
     result_text = []
     for color, proportion in zip(selected_paint_colors.keys(), result.x):
@@ -74,9 +89,20 @@ def optimize_color_mix():
 
     result_label['text'] = "\n".join(result_text)
 
-    final_color = np.dot(result.x, np.array(list(selected_paint_colors.values())))
+    final_color = np.dot(result.x, np.array(
+        list(selected_paint_colors.values())))
     final_color_label['bg'] = triplet_to_hex(tuple(final_color.astype(int)))
     final_color_label['text'] = f'Final mixed color: {final_color}'
+
+
+def analyze_webcam_color():
+    global desired_color_label
+
+    avg_color = get_webcam_color()
+
+    if avg_color is not None:
+        desired_color_label['bg'] = triplet_to_hex(
+            tuple(avg_color.astype(int)))
 
 
 def choose_desired_color():
@@ -87,6 +113,9 @@ def choose_desired_color():
 
 root = tk.Tk()
 root.title("Color Mixer")
+
+webcam_analysis_button = tk.Button(root, text="Analyze color with webcam", command=analyze_webcam_color)
+webcam_analysis_button.grid(row=4, column=0, columnspan=3, pady=10)
 
 # Desired color
 tk.Label(root, text="Desired color:").grid(row=0, column=0, sticky='w')
