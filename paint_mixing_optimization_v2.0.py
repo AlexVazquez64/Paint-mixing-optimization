@@ -3,10 +3,6 @@ from scipy.optimize import minimize
 import tkinter as tk
 from tkinter import colorchooser
 
-# ... (your existing code, e.g. desired_color, paint_colors, cost_function, etc.)
-# Define the desired color in RGB format
-# desired_color = np.array([200, 100, 50])
-
 # Define the available paint colors and their corresponding RGB values
 paint_colors = {
     'red': np.array([255, 0, 0]),
@@ -17,7 +13,6 @@ paint_colors = {
     'black': np.array([0, 0, 0]),
 }
 
-
 def hex_to_triplet(hex_color):
     return tuple(int(hex_color[i:i+2], 16) for i in (1, 3, 5))
 
@@ -27,10 +22,10 @@ def triplet_to_hex(rgb_color):
 
 # Define the cost function to be minimized
 
-
 def cost_function(x, desired_color, selected_paint_colors):
     mixed_color = np.dot(x, np.array(list(selected_paint_colors.values())))
     return np.linalg.norm(desired_color - mixed_color)
+
 
 # Define a small positive value
 EPSILON = 1e-5
@@ -42,8 +37,6 @@ constraints = (
     # mixing proportions should be non-negative
     {'type': 'ineq', 'fun': lambda x: x},
 )
-
-
 
 def optimize_color_mix():
     global desired_color_label
@@ -62,11 +55,12 @@ def optimize_color_mix():
     selected_paint_colors = {color: value for i, (color, value) in enumerate(
         paint_colors.items()) if i in paint_colors_selected_indices}
 
-    initial_guess = np.ones(len(selected_paint_colors)) / len(selected_paint_colors)
+    initial_guess = np.ones(len(selected_paint_colors)) / \
+        len(selected_paint_colors)
     bounds = [(0, 1)] * len(selected_paint_colors)
 
     result = minimize(cost_function, initial_guess, args=(desired_color, selected_paint_colors),
-                      constraints=constraints, bounds=bounds)
+                      constraints=constraints, bounds=bounds, options={'maxiter': 10000, 'disp': True})
 
     result_text = []
     for color, proportion in zip(selected_paint_colors.keys(), result.x):
@@ -74,7 +68,8 @@ def optimize_color_mix():
 
     result_label['text'] = "\n".join(result_text)
 
-    final_color = np.dot(result.x, np.array(list(selected_paint_colors.values())))
+    final_color = np.dot(result.x, np.array(
+        list(selected_paint_colors.values())))
     final_color_label['bg'] = triplet_to_hex(tuple(final_color.astype(int)))
     final_color_label['text'] = f'Final mixed color: {final_color}'
 
